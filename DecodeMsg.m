@@ -3,7 +3,8 @@ close all
 
 % camVid = VideoReader('bin4.mj2');
 timeSeries = load('timeSeries.mat');
-timeSeries = timeSeries.ROItimeSeries(:,:,2);
+
+timeSeries = conv(timeSeries.ROItimeSeries(:,:,2), r;
 numFrames = length(timeSeries);
 threshold = 50;
  
@@ -53,7 +54,7 @@ end
 
 % Convert multiple frame vals to single bit val
 ones = 0;
-zeros = 0;
+numZeros = 0;
 binaryCode = [];
 readBits = readBits(1:810);
 
@@ -61,14 +62,14 @@ for i = 1:length(readBits)
     if readBits(i) == 1
         ones = ones+1;
     else
-        zeros = zeros+1;
+        numZeros = numZeros+1;
     end 
     if ones == 5
         binaryCode(end+1) = 1;
         ones = 0;
-    elseif zeros == 5
+    elseif numZeros == 5
         binaryCode(end+1) = 0;
-        zeros = 0;
+        numZeros = 0;
     end
 end
 
@@ -78,14 +79,55 @@ if mod(length(binaryCode),8) ~= 0
     binaryCode = binaryCode(1:length(binaryCode)-remainder);
 end
 
+
 numChars = length(binaryCode)/8;
 disp(numChars)
-chars = char(zeros(1, numChars));
+chars = cell(numChars,1);
 
 for i = 1:numChars
     curByte = binaryCode((i-1)*8+1:i*8);
-    curDecimal = bin2dec(curByte);
-    chars(i) = char(curDecimal);
+    temp = 0;
+    for j=1:length(curByte)
+        temp = temp + curByte(j)*10^(length(curByte)-j);
+    end
+    chars{i} = char(string(temp));
+end
+curDecimal = bin2dec(chars);
+curDecimal = curDecimal';
+
+%disp(['The converted string is: ', char(chars)]);
+disp(char(curDecimal))
+
+%% Calculate BER
+
+inputMessage = [01110011 01110100 01100001 01110010 01110100 00100000 01001000 ...
+    01100101 01101100 01101100 01101111 00100000 01010111 01101111 01110010 ...
+    01101100 01100100 00100001 00100000 01100101 01101110 01100100];
+inputMessage  = reshape(inputMessage) 
+figure
+plot(1:176, inputMessage)
+title('Input')
+
+inputBinary = [];
+
+for i = 1:length(inputMessage)
+    inputBinary = [inputBinary, binaryVec];
 end
 
-disp(['The converted string is: ', chars]);
+% Now we compare inputBinary with binaryCode
+
+% Ensure that the binaryCode has the same length as inputBinary
+minLength = min(length(inputBinary), length(binaryCode));
+binaryCode = binaryCode(1:minLength);
+inputBinary = inputBinary(1:minLength);
+
+% Calculate the number of bit errors
+numErrors = sum(binaryCode ~= inputBinary);
+
+% Calculate the bit error rate (BER)
+bitErrorRate = numErrors / minLength;
+
+% Display the results
+disp(['Number of bit errors: ', num2str(numErrors)]);
+disp(['Total number of bits compared: ', num2str(minLength)]);
+disp(['Bit Error Rate (BER): ', num2str(bitErrorRate)]);
