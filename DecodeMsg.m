@@ -3,19 +3,38 @@ close all
 
 % camVid = VideoReader('bin4.mj2');
 timeSeries = load('timeSeries.mat');
-
-timeSeries = conv(timeSeries.ROItimeSeries(:,:,2), r;
+timeSeries = timeSeries.ROItimeSeries(:,:,2);
 numFrames = length(timeSeries);
-threshold = 50;
+
+% Define Raised Cosine Pulse for Matched Filter
+Ts = .04; % Should be safely within nyquist if Camera FR = 70 Hz, Fs/2 = .025
+t = -4*Ts:Ts:4*Ts; 
+beta = 0.5; % Roll-off, prolly need to adjust
+raisedCos = sinc(t/Ts).*(cos(pi*beta*t/Ts)./(1-(2*beta*t/Ts).^2));
+raisedCos(t == Ts/(2*beta) | t == -Ts/(2*beta)) = pi/4*sinc(1/(2*beta)); % Deal with 0/0
+
+filtered_signal = conv(modulated_signal, raisedCos, 'same');
+downSampleFactor = 4;
+signalDSFilt = filtered_signal(1:downSampleFactor:end);
  
 readBits = zeros(1, length(timeSeries));
 for i = 1:length(timeSeries)
-    if timeSeries(i) > threshold
+    if timeSeries(i) > 0
         readBits(i) = 1;
     else
         readBits(i) = 0;
     end
 end
+
+readBytes = reshape(readBits,8,[]).';
+stringBytes = bin2dec(num2str(received_bytes));
+recievedMessage = char(stringBytes)';
+% Remove Start and End
+recievedMessage = strrep(recievedMessage, 'start ', '');
+recievedMessage = strrep(recievedMessage, ' end', '');
+
+disp('Decoded message:');
+disp(received_message);
 
 framePlot = 1:numFrames;
 
@@ -33,77 +52,37 @@ xlabel('Frames')
 ylabel('Value')
 
 
-% Find approximate numFrames/bit
-count = 0;
-minFrames = inf;
-for i = 1:length(readBits)
-    if readBits(i) == 1
-        count = count+1;
-    else
-        if count > 0 && count < minFrames
-            minFrames = count;
-        else 
-            count = 0;
-        end
-    end
-end
-
-if minFrames == inf
-    minFrames = 0;
-end
-
-% Convert multiple frame vals to single bit val
-ones = 0;
-numZeros = 0;
-binaryCode = [];
-readBits = readBits(1:810);
-
-for i = 1:length(readBits)
-    if readBits(i) == 1
-        ones = ones+1;
-    else
-        numZeros = numZeros+1;
-    end 
-    if ones == 5
-        binaryCode(end+1) = 1;
-        ones = 0;
-    elseif numZeros == 5
-        binaryCode(end+1) = 0;
-        numZeros = 0;
-    end
-end
-
-% Convert the Bits back to string
-if mod(length(binaryCode),8) ~= 0
-    remainder = mod(length(binaryCode), 8);
-    binaryCode = binaryCode(1:length(binaryCode)-remainder);
-end
-
-
-numChars = length(binaryCode)/8;
-disp(numChars)
-chars = cell(numChars,1);
-
-for i = 1:numChars
-    curByte = binaryCode((i-1)*8+1:i*8);
-    temp = 0;
-    for j=1:length(curByte)
-        temp = temp + curByte(j)*10^(length(curByte)-j);
-    end
-    chars{i} = char(string(temp));
-end
-curDecimal = bin2dec(chars);
-curDecimal = curDecimal';
-
-%disp(['The converted string is: ', char(chars)]);
-disp(char(curDecimal))
+% % Convert the Bits back to string
+% if mod(length(binaryCode),8) ~= 0
+%     remainder = mod(length(binaryCode), 8);
+%     binaryCode = binaryCode(1:length(binaryCode)-remainder);
+% end
+% 
+% 
+% numChars = length(binaryCode)/8;
+% disp(numChars)
+% chars = cell(numChars,1);
+% 
+% for i = 1:numChars
+%     curByte = binaryCode((i-1)*8+1:i*8);
+%     temp = 0;
+%     for j=1:length(curByte)
+%         temp = temp + curByte(j)*10^(length(curByte)-j);
+%     end
+%     chars{i} = char(string(temp));
+% end
+% curDecimal = bin2dec(chars);
+% curDecimal = curDecimal';
+% 
+% %disp(['The converted string is: ', char(chars)]);
+% disp(char(curDecimal))
 
 %% Calculate BER
 
 inputMessage = [01110011 01110100 01100001 01110010 01110100 00100000 01001000 ...
     01100101 01101100 01101100 01101111 00100000 01010111 01101111 01110010 ...
     01101100 01100100 00100001 00100000 01100101 01101110 01100100];
-inputMessage  = reshape(inputMessage) 
+inputMessage  = reshape(inputMe
 figure
 plot(1:176, inputMessage)
 title('Input')
