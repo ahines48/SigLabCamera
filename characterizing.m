@@ -7,7 +7,8 @@ superHugeData = uint8(zeros(1080, 1440, 3, 100));
 
 debug = false;
 
-[infilepath,infilename,infileext] = fileparts('noise/white/gain/gain25.mj2');
+%[infilepath,infilename,infileext] = fileparts('noise/white/gain/gain25.mj2');
+[infilepath,infilename,infileext] = fileparts('noise/exp1000gain45bin1.mj2');
 v = VideoReader([infilepath filesep infilename  infileext]);
 
 if debug
@@ -114,7 +115,7 @@ dataR = squeeze(superHugeData(Gx,Gy,1,:));
 dataG = squeeze(superHugeData(Gx,Gy,2,:));
 dataB = squeeze(superHugeData(Gx,Gy,3,:));
 
-figure('Units','normalized','Position',[0.2 0.1 0.6 0.8]);
+figure%('Units','normalized','Position',[0.2 0.1 0.6 0.8]);
 subplot(3,1,1)
 histogram(dataR, 'FaceColor', 'r','NumBins',256);
 xlim([-1 255])
@@ -131,7 +132,7 @@ dataR = squeeze(superHugeData(Bx,By,1,:));
 dataG = squeeze(superHugeData(Bx,By,2,:));
 dataB = squeeze(superHugeData(Bx,By,3,:));
 
-figure('Units','normalized','Position',[0.2 0.1 0.6 0.8]);
+figure%('Units','normalized','Position',[0.2 0.1 0.6 0.8]);
 subplot(3,1,1)
 histogram(dataR, 'FaceColor', 'r','NumBins',256);
 xlim([-1 255])
@@ -141,6 +142,125 @@ xlim([-1 255])
 subplot(3,1,3)
 histogram(dataB, 'FaceColor', 'b','NumBins',256);
 xlim([-1 255])
+%% Binning 
+bin1 = load("noise/dark/bin/bin1_ROItimeSeries.mat");
+bin2 = load("noise/dark/bin/bin2_ROItimeSeries.mat");
+bin4 = load("noise/dark/bin/bin4_ROItimeSeries.mat");
+
+bin1 = bin1.ROItimeSeries;
+bin2 = bin2.ROItimeSeries;
+bin4 = bin4.ROItimeSeries;
+data = {bin1,bin2,bin4};
+titles = {"bin1","bin2","bin4"};
+
+figure;
+for i = 1:3
+    subplot(3,1,i)
+    plot(data{i}(:,:,1),'Color','red');
+    hold on;
+    plot(data{i}(:,:,2),'Color','green');
+    plot(data{i}(:,:,3),'Color','blue');
+    title(titles{i});
+    hold off;
+end
+sgtitle("Noise vs. Binning")
+%% Exposure Time
+folderPath = 'noise/dark/exp/center';
+fileList = dir(fullfile(folderPath, '*.mat'));
+data = cell(length(fileList),1);
+titles = cell(length(fileList),1);
+for i=1:length(fileList)
+    path = fullfile(fileList(i).folder, fileList(i).name);
+    data_temp = load(path);
+    data_temp = data_temp.ROItimeSeries;
+    data{i} = data_temp;
+    titles{i} = fileList(i).name;
+end
+
+figure;
+for i = 1:length(fileList)
+    subplot(length(fileList),1,i)
+    plot(data{i}(:,:,1),'Color','red');
+    hold on;
+    plot(data{i}(:,:,2),'Color','green');
+    plot(data{i}(:,:,3),'Color','blue');
+    title(titles{i});
+    hold off;
+end
+sgtitle("Noise vs. Exposure Time")
+%% Gain
+folderPath = 'noise/dark/gain';
+fileList = dir(fullfile(folderPath, '*.mat'));
+data = cell(length(fileList),1);
+titles = cell(length(fileList),1);
+for i=1:length(fileList)
+    path = fullfile(fileList(i).folder, fileList(i).name);
+    data_temp = load(path);
+    data_temp = data_temp.ROItimeSeries;
+    data{i} = data_temp;
+    titles{i} = fileList(i).name;
+end
+
+figure;
+for i = 1:length(fileList)
+    subplot(length(fileList),1,i)
+    plot(data{i}(:,:,1),'Color','red');
+    hold on;
+    plot(data{i}(:,:,2),'Color','green');
+    plot(data{i}(:,:,3),'Color','blue');
+    title(titles{i});
+    hold off;
+end
+sgtitle("Noise vs. Gain")
+%% White Constant Light
+%% Exposure time
+folderPath = 'noise/white/exp';
+fileList = dir(fullfile(folderPath, '*.mat'));
+data = cell(length(fileList),1);
+titles = cell(length(fileList),1);
+for i=1:length(fileList)
+    path = fullfile(fileList(i).folder, fileList(i).name);
+    data_temp = load(path);
+    data_temp = data_temp.ROItimeSeries;
+    data{i} = data_temp;
+    titles{i} = fileList(i).name;
+end
+
+figure;
+for i = 1:length(fileList)
+    subplot(length(fileList),1,i)
+    plot(data{i}(:,:,1),'Color','red');
+    hold on;
+    plot(data{i}(:,:,2),'Color','green');
+    plot(data{i}(:,:,3),'Color','blue');
+    title(titles{i});
+    hold off;
+end
+sgtitle("Noise vs. Exposure Time")
+%%
+folderPath = 'noise/white/gain';
+fileList = dir(fullfile(folderPath, '*.mat'));
+data = cell(length(fileList),1);
+titles = cell(length(fileList),1);
+for i=1:length(fileList)
+    path = fullfile(fileList(i).folder, fileList(i).name);
+    data_temp = load(path);
+    data_temp = data_temp.ROItimeSeries;
+    data{i} = data_temp;
+    titles{i} = fileList(i).name;
+end
+
+figure;
+for i = 1:length(fileList)
+    subplot(length(fileList),1,i)
+    plot(data{i}(:,:,1),'Color','red');
+    hold on;
+    plot(data{i}(:,:,2),'Color','green');
+    plot(data{i}(:,:,3),'Color','blue');
+    title(titles{i});
+    hold off;
+end
+sgtitle("Noise vs. Exposure Time")
 %% Color accuracy
 load bars/raw/bars_ROItimeSeries.mat
 color = ["black","yellow","cyan","green","magenta","red","blue"];
